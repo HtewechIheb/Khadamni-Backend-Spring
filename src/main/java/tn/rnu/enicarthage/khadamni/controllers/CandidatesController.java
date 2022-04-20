@@ -1,5 +1,7 @@
 package tn.rnu.enicarthage.khadamni.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -22,6 +24,7 @@ import java.util.Objects;
 
 @RestController
 @RequestMapping(path = "api/candidates")
+@SecurityRequirement(name = "bearerAuth")
 public class CandidatesController {
     @Autowired
     private CandidateService candidateService;
@@ -81,7 +84,7 @@ public class CandidatesController {
                         .header(HttpHeaders.CONTENT_DISPOSITION, String.format("attachment; filename=\"%s\"", candidate.getResumeFileName()))
                         .body(candidate.getResumeFile());
             default:
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(String.format("Candidate Resource %s Does Not Exist!", resource));
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(String.format("Candidate Resource %s Does Not Exist!", resource));
         }
     }
 

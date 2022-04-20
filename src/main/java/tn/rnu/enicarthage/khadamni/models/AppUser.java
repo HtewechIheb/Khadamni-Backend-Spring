@@ -4,10 +4,15 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import tn.rnu.enicarthage.khadamni.shared.enumerations.UserType;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
+import java.util.Collection;
 
 @Entity
 @Data
@@ -19,9 +24,11 @@ public class AppUser {
     private Long id;
 
     @NotNull
+    @Column(unique = true)
     private String userName;
 
     @NotNull
+    @Column(unique = true)
     private String email;
 
     @NotNull
@@ -38,4 +45,8 @@ public class AppUser {
     @JsonIgnore
     @OneToOne(mappedBy = "account")
     private Candidate candidate;
+
+    public UserDetails getUserDetails() {
+        return new User(userName, passwordHash, new ArrayList<>());
+    }
 }

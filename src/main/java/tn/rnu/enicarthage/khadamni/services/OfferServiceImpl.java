@@ -42,8 +42,8 @@ public class OfferServiceImpl implements OfferService {
         Offer offerToUpdate = offerRepository.findById(id).orElse(null);
 
         if(Objects.nonNull(offerToUpdate)){
-            if(!StringHelper.isBlank(updatedOffer.getCategory())){
-                offerToUpdate.setCategory(updatedOffer.getCategory());
+            if(!StringHelper.isBlank(updatedOffer.getIndustry())){
+                offerToUpdate.setIndustry(updatedOffer.getIndustry());
             }
             if(!StringHelper.isBlank(updatedOffer.getTitle())){
                 offerToUpdate.setTitle(updatedOffer.getTitle());
@@ -54,14 +54,26 @@ public class OfferServiceImpl implements OfferService {
             if(Objects.nonNull(updatedOffer.getSpots())){
                 offerToUpdate.setSpots(updatedOffer.getSpots());
             }
+            if(Objects.nonNull(updatedOffer.getSalary())){
+                offerToUpdate.setSalary(updatedOffer.getSalary());
+            }
+            if(!StringHelper.isBlank(updatedOffer.getDegree())){
+                offerToUpdate.setDegree(updatedOffer.getDegree());
+            }
+            if(!StringHelper.isBlank(updatedOffer.getGender())){
+                offerToUpdate.setGender(updatedOffer.getGender());
+            }
+            if(!StringHelper.isBlank(updatedOffer.getSkills())){
+                offerToUpdate.setSkills(updatedOffer.getSkills());
+            }
             if(!StringHelper.isBlank(updatedOffer.getType())){
                 offerToUpdate.setType(updatedOffer.getType());
             }
-            if(!StringHelper.isBlank(updatedOffer.getExperienceLowerBound())){
-                offerToUpdate.setExperienceLowerBound(updatedOffer.getExperienceLowerBound());
+            if(!StringHelper.isBlank(updatedOffer.getMinimumExperience())){
+                offerToUpdate.setMinimumExperience(updatedOffer.getMinimumExperience());
             }
-            if(!StringHelper.isBlank(updatedOffer.getExperienceUpperBound())){
-                offerToUpdate.setExperienceUpperBound(updatedOffer.getExperienceUpperBound());
+            if(!StringHelper.isBlank(updatedOffer.getRecommendedExperience())){
+                offerToUpdate.setRecommendedExperience(updatedOffer.getRecommendedExperience());
             }
 
             offerRepository.save(offerToUpdate);

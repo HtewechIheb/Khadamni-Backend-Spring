@@ -19,7 +19,7 @@ public class Offer {
     private Long id;
 
     @NotNull
-    private String category;
+    private String industry;
 
     @NotNull
     private String title;
@@ -29,13 +29,21 @@ public class Offer {
 
     private Integer spots;
 
+    private Double salary;
+
+    private String degree;
+
+    private String gender;
+
+    private String skills;
+
     @NotNull
     private String type;
 
     @NotNull
-    private String experienceLowerBound;
+    private String minimumExperience;
 
-    private String experienceUpperBound;
+    private String recommendedExperience;
 
     @JsonIgnore
     @ManyToOne(optional = false)

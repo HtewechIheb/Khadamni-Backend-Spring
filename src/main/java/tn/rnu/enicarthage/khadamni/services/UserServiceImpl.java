@@ -19,6 +19,11 @@ public class UserServiceImpl implements UserService {
     private PasswordEncoder passwordEncoder;
 
     @Override
+    public AppUser getById(Long id) {
+        return userRepository.findById(id).orElse(null);
+    }
+
+    @Override
     public AppUser findByUserName(String userName) {
         return userRepository.findByUserName(userName);
     }

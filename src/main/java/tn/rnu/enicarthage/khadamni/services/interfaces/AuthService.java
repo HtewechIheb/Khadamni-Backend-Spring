@@ -8,5 +8,5 @@ public interface AuthService {
     AuthResultDTO login(String email, String password);
     AuthResultDTO registerCompany(String email, String password, Company company);
     AuthResultDTO registerCandidate(String email, String password, Candidate candidate);
-    AuthResultDTO refreshToken(String token, String refreshToken);
+    AuthResultDTO refreshToken(String refreshToken);
 }

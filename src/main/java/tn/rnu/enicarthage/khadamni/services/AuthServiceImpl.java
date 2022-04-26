@@ -5,6 +5,11 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.ser.std.JsonValueSerializer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tn.rnu.enicarthage.khadamni.configuration.JWTConfig;
@@ -118,31 +123,14 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public AuthResultDTO refreshToken(String token, String refreshToken) {
-        DecodedJWT decodedToken = validateToken(token);
-
-        if (!Objects.nonNull(decodedToken)) {
-            AuthResultDTO authResultDTO = new AuthResultDTO();
-            authResultDTO.setSucceeded(false);
-            authResultDTO.setError("Token Is Invalid!");
-            return authResultDTO;
-        }
-
+    public AuthResultDTO refreshToken(String refreshToken) {
         try {
             RefreshToken storedRefreshToken = refreshTokenRepository.getById(refreshToken);
-            String jwtTokenJti = decodedToken.getId();
 
             if (storedRefreshToken.getExpiryDate().compareTo(LocalDateTime.now()) <= 0) {
                 AuthResultDTO authResultDTO = new AuthResultDTO();
                 authResultDTO.setSucceeded(false);
                 authResultDTO.setError("Refresh Token Has Expired!");
-                return authResultDTO;
-            }
-
-            if (!storedRefreshToken.getJwtId().equals(jwtTokenJti)) {
-                AuthResultDTO authResultDTO = new AuthResultDTO();
-                authResultDTO.setSucceeded(false);
-                authResultDTO.setError("Refresh Token Invalid!");
                 return authResultDTO;
             }
 
@@ -185,31 +173,55 @@ public class AuthServiceImpl implements AuthService {
 
     private AuthResultDTO generateAuthResult(AppUser user)
     {
-        UUID jwtId = UUID.randomUUID();
-        Algorithm algorithm = Algorithm.HMAC256(jwtConfig.getSecret().getBytes(StandardCharsets.UTF_8));
-        String token = JWT.create()
-                .withSubject(user.getUserName())
-                .withExpiresAt(new Date(System.currentTimeMillis() + jwtConfig.getTokenLifeTime() * 60 * 1000))
-                .withJWTId(jwtId.toString())
-                .sign(algorithm);
+        try {
+            String info = null;
+            ObjectMapper objectMapper = new ObjectMapper();
 
-        RefreshToken refreshToken = new RefreshToken();
-        refreshToken.setToken(generateRefreshToken(jwtConfig.getRefreshTokenLength()));
-        refreshToken.setJwtId(jwtId.toString());
-        refreshToken.setIsRevoked(false);
-        refreshToken.setAddedDate(LocalDateTime.now());
-        refreshToken.setExpiryDate(LocalDateTime.now().plusDays(jwtConfig.getRefreshTokenLifeTime()));
-        refreshToken.setUser(user);
+            if(user.getType() == UserType.Company)
+            {
+                info = objectMapper.writeValueAsString(user.getCompany());
+            }
+            else if(user.getType() == UserType.Candidate)
+            {
+                info = objectMapper.writeValueAsString(user.getCandidate());
+            }
 
-        refreshTokenRepository.save(refreshToken);
+            UUID jwtId = UUID.randomUUID();
+            Algorithm algorithm = Algorithm.HMAC256(jwtConfig.getSecret().getBytes(StandardCharsets.UTF_8));
+            String token = JWT.create()
+                    .withSubject(user.getUserName())
+                    .withExpiresAt(new Date(System.currentTimeMillis() + jwtConfig.getTokenLifeTime() * 60 * 1000))
+                    .withJWTId(jwtId.toString())
+                    .withClaim("id", user.getId())
+                    .withClaim("email", user.getEmail())
+                    .withClaim("type", user.getType().toString().toLowerCase())
+                    .withClaim("info", info)
+                    .sign(algorithm);
 
-        AuthResultDTO authResultDTO = new AuthResultDTO();
-        authResultDTO.setSucceeded(true);
-        authResultDTO.setUser(user);
-        authResultDTO.setToken(token);
-        authResultDTO.setRefreshToken(refreshToken.getToken());
+            RefreshToken refreshToken = new RefreshToken();
+            refreshToken.setToken(generateRefreshToken(jwtConfig.getRefreshTokenLength()));
+            refreshToken.setJwtId(jwtId.toString());
+            refreshToken.setIsRevoked(false);
+            refreshToken.setAddedDate(LocalDateTime.now());
+            refreshToken.setExpiryDate(LocalDateTime.now().plusDays(jwtConfig.getRefreshTokenLifeTime()));
+            refreshToken.setUser(user);
 
-        return authResultDTO;
+            refreshTokenRepository.save(refreshToken);
+
+            AuthResultDTO authResultDTO = new AuthResultDTO();
+            authResultDTO.setSucceeded(true);
+            authResultDTO.setUser(user);
+            authResultDTO.setToken(token);
+            authResultDTO.setRefreshToken(refreshToken.getToken());
+
+            return authResultDTO;
+        }
+        catch (JsonProcessingException exception){
+            AuthResultDTO authResultDTO = new AuthResultDTO();
+            authResultDTO.setSucceeded(false);
+            authResultDTO.setError("Internal Error Occurred!");
+            return authResultDTO;
+        }
     }
 
     private String generateRefreshToken(int length)
@@ -223,16 +235,5 @@ public class AuthServiceImpl implements AuthService {
         }
 
         return builder.toString();
-    }
-
-    private DecodedJWT validateToken(String token){
-        try {
-            Algorithm algorithm = Algorithm.HMAC256(jwtConfig.getSecret().getBytes(StandardCharsets.UTF_8));
-            JWTVerifier jwtVerifier = JWT.require(algorithm).build();
-            return jwtVerifier.verify(token);
-        }
-        catch(JWTVerificationException exception){
-            return null;
-        }
     }
 }

@@ -88,14 +88,14 @@ public class AuthController {
     }
 
     @PostMapping(path = "refreshtoken")
-    public ResponseEntity<Object> refreshToken(@RequestParam String token, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
+    public ResponseEntity<Object> refreshToken(HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         Optional<Cookie> refreshToken = Arrays.stream(httpRequest.getCookies()).filter(cookie -> cookie.getName().equals("refresh_token")).findFirst();
 
         if(refreshToken.isEmpty()){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Refresh Token Cookie Is Not Set!");
         }
 
-        AuthResultDTO authResultDTO = authService.refreshToken(token, refreshToken.get().getValue());
+        AuthResultDTO authResultDTO = authService.refreshToken(refreshToken.get().getValue());
 
         if(!authResultDTO.isSucceeded()){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(authResultDTO.getError());

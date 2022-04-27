@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.ser.std.JsonValueSerializer;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tn.rnu.enicarthage.khadamni.configuration.JWTConfig;
@@ -71,7 +72,7 @@ public class AuthServiceImpl implements AuthService {
             return authResultDTO;
         }
 
-        return generateAuthResult(existingUser);
+        return generateAuthResult(existingUser, null);
     }
 
     @Override
@@ -95,7 +96,7 @@ public class AuthServiceImpl implements AuthService {
         company.setAccount(user);
 
         companyService.addCompany(company);
-        return generateAuthResult(user);
+        return generateAuthResult(user, company);
     }
 
     @Override
@@ -113,46 +114,45 @@ public class AuthServiceImpl implements AuthService {
         AppUser user = new AppUser();
         user.setUserName(email);
         user.setEmail(email);
-        user.setType(UserType.Company);
+        user.setType(UserType.Candidate);
 
         userService.addUser(user, password);
         candidate.setAccount(user);
 
         candidateService.addCandidate(candidate);
-        return generateAuthResult(user);
+        return generateAuthResult(user, candidate);
     }
 
     @Override
     public AuthResultDTO refreshToken(String refreshToken) {
-        try {
-            RefreshToken storedRefreshToken = refreshTokenRepository.getById(refreshToken);
+        RefreshToken storedRefreshToken = refreshTokenRepository.findById(refreshToken).orElse(null);
 
-            if (storedRefreshToken.getExpiryDate().compareTo(LocalDateTime.now()) <= 0) {
-                AuthResultDTO authResultDTO = new AuthResultDTO();
-                authResultDTO.setSucceeded(false);
-                authResultDTO.setError("Refresh Token Has Expired!");
-                return authResultDTO;
-            }
-
-            if (storedRefreshToken.getIsRevoked()) {
-                revokeAllUserRefreshTokens(storedRefreshToken.getUser());
-
-                AuthResultDTO authResultDTO = new AuthResultDTO();
-                authResultDTO.setSucceeded(false);
-                authResultDTO.setError("Refresh Token Has Been Revoked!");
-                return authResultDTO;
-            }
-
-            revokeRefreshToken(storedRefreshToken);
-
-            return generateAuthResult(storedRefreshToken.getUser());
-        }
-        catch (EntityNotFoundException exception){
+        if(storedRefreshToken == null) {
             AuthResultDTO authResultDTO = new AuthResultDTO();
             authResultDTO.setSucceeded(false);
             authResultDTO.setError("Refresh Token Does Not Exist!");
             return authResultDTO;
         }
+
+        if (storedRefreshToken.getExpiryDate().compareTo(LocalDateTime.now()) <= 0) {
+            AuthResultDTO authResultDTO = new AuthResultDTO();
+            authResultDTO.setSucceeded(false);
+            authResultDTO.setError("Refresh Token Has Expired!");
+            return authResultDTO;
+        }
+
+        if (storedRefreshToken.getIsRevoked()) {
+            revokeAllUserRefreshTokens(storedRefreshToken.getUser());
+
+            AuthResultDTO authResultDTO = new AuthResultDTO();
+            authResultDTO.setSucceeded(false);
+            authResultDTO.setError("Refresh Token Has Been Revoked!");
+            return authResultDTO;
+        }
+
+        revokeRefreshToken(storedRefreshToken);
+
+        return generateAuthResult(storedRefreshToken.getUser(), null);
     }
 
     private void revokeRefreshToken(RefreshToken refreshToken)
@@ -171,19 +171,32 @@ public class AuthServiceImpl implements AuthService {
         refreshTokenRepository.saveAll(refreshTokens);
     }
 
-    private AuthResultDTO generateAuthResult(AppUser user)
+    private AuthResultDTO generateAuthResult(AppUser user, Object userInfo)
     {
         try {
             String info = null;
-            ObjectMapper objectMapper = new ObjectMapper();
 
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.registerModule(new JavaTimeModule());
+
+            // TODO: Update this hacky method of extracting user info
             if(user.getType() == UserType.Company)
             {
-                info = objectMapper.writeValueAsString(user.getCompany());
+                if(Objects.nonNull(userInfo)){
+                    info = objectMapper.writeValueAsString((Company)userInfo);
+                }
+                else {
+                    info = objectMapper.writeValueAsString(user.getCompany());
+                }
             }
             else if(user.getType() == UserType.Candidate)
             {
-                info = objectMapper.writeValueAsString(user.getCandidate());
+                if(Objects.nonNull(userInfo)){
+                    info = objectMapper.writeValueAsString((Candidate)userInfo);
+                }
+                else {
+                    info = objectMapper.writeValueAsString(user.getCandidate());
+                }
             }
 
             UUID jwtId = UUID.randomUUID();

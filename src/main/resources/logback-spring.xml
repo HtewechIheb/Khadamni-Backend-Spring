@@ -14,7 +14,7 @@
         </encoder>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${LOGS}/archived/app-logs-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <fileNamePattern>./logs/archived/app-logs-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
             <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
                 <maxFileSize>2MB</maxFileSize>
             </timeBasedFileNamingAndTriggeringPolicy>

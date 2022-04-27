@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.multipart.MultipartFile;
 import tn.rnu.enicarthage.khadamni.models.Candidate;
 import tn.rnu.enicarthage.khadamni.models.Company;
@@ -51,7 +52,7 @@ public class RegisterCandidateDTO {
     @AllowedFileExtensions(value = { "jpg", "jpeg", "png" })
     private MultipartFile photoFile;
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate birthdate;
 
     public Candidate getCandidate() throws IOException {
